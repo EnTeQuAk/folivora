@@ -354,6 +354,9 @@ BROKEN_REQUIREMENTS = ('Django==1.4.1\n_--.>=asdhasjk ,,, [borked]\n'
                        'Sphinx==1.10')
 EMPTY_REQUIREMENTS = ''
 
+VALID_BUILDOUT_VERSIONS = '[versions]\nDjango = 1.4.1\nSphinx = 1.10'
+BROKEN_BUILDOUT_VERSIONS = '[versions]\nDjango'
+
 
 class TestProjectForms(TestCase):
     def setUp(self):
@@ -681,13 +684,38 @@ class TestPipRequirementsParsers(TestCase):
         packages, missing = self.parse(
             ContentFile(VALID_REQUIREMENTS).readlines())
         self.assertEqual(packages, {'Sphinx': '1.10', 'Django': '1.4.1'})
-        self.assertFalse(missing)
+        self.assertEqual(missing, [])
 
     def test_pip_requirements_parse_parse_broken(self):
         packages, missing = self.parse(
             ContentFile(BROKEN_REQUIREMENTS))
         self.assertEqual(packages, {'Sphinx': '1.10', 'Django': '1.4.1'})
         self.assertEqual(missing, ['_--.>=asdhasjk ,,, [borked]\n'])
+
+    def test_pip_requirements_parse_empty(self):
+        packages, missing = self.parse(
+            ContentFile(EMPTY_REQUIREMENTS))
+        self.assertEqual(packages, {})
+        self.assertEqual(missing, [])
+
+
+class TestBuildoutVersionsParsers(TestCase):
+
+    def setUp(self):
+        self.parse = get_parser('buildout_versions').parse
+
+    def test_pip_requirements_parse_valid(self):
+        packages, missing = self.parse(
+            ContentFile(VALID_BUILDOUT_VERSIONS).readlines())
+        self.assertEqual(packages, {'sphinx': '1.10', 'django': '1.4.1'})
+        self.assertEqual(missing, [])
+
+    def test_pip_requirements_parse_parse_broken(self):
+        packages, missing = self.parse(
+            ContentFile(BROKEN_BUILDOUT_VERSIONS))
+        # ConfigParser does not support 'partial broken'
+        self.assertEqual(packages, {})
+        self.assertEqual(missing, [])
 
     def test_pip_requirements_parse_empty(self):
         packages, missing = self.parse(

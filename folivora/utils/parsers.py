@@ -1,5 +1,7 @@
 #-*- coding: utf-8 -*-
 import pkg_resources
+import ConfigParser
+import StringIO
 from collections import namedtuple
 from django.utils.translation import ugettext_lazy
 
@@ -45,4 +47,27 @@ class PipRequirementsParser(BaseParser):
         return packages, missing
 
 
-PARSERS = [PipRequirementsParser]
+class BuildoutVersionsParser(BaseParser):
+    name = 'buildout_versions'
+    title = ugettext_lazy('Buildout Versions')
+
+    def parse(self, lines):
+        data = u'\n'.join(lines)
+        parser = ConfigParser.ConfigParser()
+        try:
+            parser.readfp(StringIO.StringIO(data))
+        except ConfigParser.ParsingError:
+            return {}, []
+
+        if not parser.has_section('versions'):
+            return {}, []
+
+        missing = []
+        packages = {}
+
+        for name, version in parser.items('versions'):
+            packages[name] = version
+        return packages, missing
+
+
+PARSERS = [PipRequirementsParser, BuildoutVersionsParser]
